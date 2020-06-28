@@ -1,28 +1,304 @@
 <html>
 <head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <style>
+body{
+    margin:0;
+    padding:0;
+	font-family: Arial;
+	font-weight: bold;
+}
 
+.card{
+    width:100px;
+    height:100px;
+    float:left;
+    background-color:#ccc;
+    margin-bottom:3px;
+	margin-right:3px;
+	position: relative;
+	cursor: pointer;
+}
+
+.cardset{
+    width:412px;
+	height:412px;
+}
+
+.selected {
+	width:94px;
+    height:94px;
+	border:3px solid black;
+}
+
+#container {
+	padding: 25px;
+}
+    </style>
 </head>
 <body>
-x
+<div id="container"></div>
 <script>
-document.onkeydown = function(e) {
-    switch (e.keyCode) {
-        case 37:
-            alert('left');
-            break;
-        case 38:
-            alert('up');
-            break;
-        case 39:
-            alert('right');
-            break;
-        case 40:
-            alert('down');
-            break;
-    }
-};
+(function ($) {
+    "use strict";
+
+    //Globalfunctions
+    $.fn.mouseControls = function (cardMap) {
+
+        $(this).on({
+            click: function () {
+
+            },
+            mouseenter: function () {
+                $(this).parent().children('.selected').removeClass('selected');
+                $(this).addClass('selected');
+            }
+        });
+
+
+        return $(this);
+    };
+
+    $.fn.cardMoveHorizont = function (direction, cardMap) {
+        var card_key, card_row, card, rowCount, actCardObj, i;
+
+        //Get row of element
+        for (card_key in cardMap) {
+            if (cardMap.hasOwnProperty(card_key)) {
+                card_row = cardMap[card_key];
+                rowCount = 1;
+                for (card in card_row) {
+                    if (card_row.hasOwnProperty(card)) {
+
+                        if (cardMap[card_key][card].id === $(this).attr('id')) {
+                            actCardObj = cardMap[card_key][card];
+
+                            if (direction === 'next') {
+                                if (rowCount % 4 === 0) {
+                                    $(this).removeClass('selected');
+                                    $('#card' + (parseInt(card.replace('card', ""), 10) - 3)).addClass('selected');
+                                } else {
+                                    $(this).removeClass('selected');
+                                    $('#card' + (parseInt(card.replace('card', ""), 10) + 1)).addClass('selected');
+                                }
+
+                            } else if (direction === 'prev') {
+                                if (rowCount === 1) {
+                                    $(this).removeClass('selected');
+                                    $('#card' + (parseInt(card.replace('card', ""), 10) + 3)).addClass('selected');
+                                } else {
+                                    $(this).removeClass('selected');
+                                    $('#card' + (parseInt(card.replace('card', ""), 10) - 1)).addClass('selected');
+                                }
+                            } else if (direction === 'up') {
+                                if ((parseInt(card_key.replace('row', ""), 10) === 1)) {
+                                    i = 1;
+                                    for (card in cardMap.row4) {
+                                        if (cardMap.row4.hasOwnProperty(card)) {
+                                            console.log(i);
+                                            if (i === rowCount) {
+                                                $(this).removeClass('selected');
+                                                $('#' + card).addClass('selected');
+                                                break;
+                                            }
+                                            i += 1;
+                                        }
+                                    }
+
+                                } else {
+                                    i = 1;
+                                    for (card in cardMap['row' + (parseInt(card_key.replace('row', ""), 10) - 1)]) {
+                                        if (cardMap['row' + (parseInt(card_key.replace('row', ""), 10) - 1)].hasOwnProperty(card)) {
+                                            console.log(i);
+                                            if (i === rowCount) {
+                                                $(this).removeClass('selected');
+                                                $('#' + card).addClass('selected');
+                                                break;
+                                            }
+                                            i += 1;
+                                        }
+                                    }
+                                }
+                            } else if (direction === 'down') {
+                                if ((parseInt(card_key.replace('row', ""), 10) % 4 === 0)) {
+                                    i = 1;
+                                    for (card in cardMap.row1) {
+                                        if (cardMap.row1.hasOwnProperty(card)) {
+                                            console.log(i);
+                                            if (i === rowCount) {
+                                                $(this).removeClass('selected');
+                                                $('#' + card).addClass('selected');
+                                                break;
+                                            }
+                                            i += 1;
+                                        }
+                                    }
+
+                                } else {
+                                    i = 1;
+                                    for (card in cardMap['row' + (parseInt(card_key.replace('row', ""), 10) + 1)]) {
+                                        if (cardMap['row' + (parseInt(card_key.replace('row', ""), 10) + 1)].hasOwnProperty(card)) {
+                                            console.log(i);
+                                            if (i === rowCount) {
+                                                $(this).removeClass('selected');
+                                                $('#' + card).addClass('selected');
+                                                break;
+                                            }
+                                            i += 1;
+                                        }
+                                    }
+                                }
+                            }
+                            break;
+                        }
+                        rowCount += 1;
+                    }
+                }
+            }
+        }
+
+        return $(this);
+    };
+
+    var settings, cardMap = {}, tmp = [], rootEle, createGameMap = function (settings, callbackFnk) {
+        // Create the Game standard with 16 cards
+        var i = 1, rowCount = 1, row = {}, shuffle, shuffleInterval = setInterval(function () {
+            //Clear tmp color
+            if (tmp.length === settings.colors.length) {
+                tmp = [];
+            }
+
+            shuffle = Math.floor(Math.random() * settings.colors.length);
+
+            if (jQuery.inArray(shuffle, tmp) === -1) {
+                tmp.push(shuffle);
+                //We have a color
+                row["card" + i] = {id : "card" + i, color : settings.colors[shuffle]};
+
+                if (i % 4 === 0) {
+                    //Push the row
+                    cardMap["row" + rowCount] = row;
+                    rowCount += 1;
+                    row = {};
+                }
+
+                i += 1;
+            }
+
+            if (i > 16) {
+                clearInterval(shuffleInterval);
+                 //Callback and pass Cardmap
+                if (typeof callbackFnk === 'function') {
+                    callbackFnk.call(this, cardMap);
+                }
+            }
+
+        }, 10);
+
+    },
+        keypressControls = function (cardMap, rootEle) {
+
+            $(window).keydown(function (e) {
+                //Initial set first card as selected
+                var actCard, nextCard;
+
+                if ($('.cardset').find('.selected').length < 1) {
+                    $('#card1').addClass('selected');
+                } else {
+                    switch (e.which) {
+                    case 37: // left
+                        $('.cardset').find('.selected').cardMoveHorizont('prev', cardMap);
+                        break;
+
+                    case 38: // up
+                        $('.cardset').find('.selected').cardMoveHorizont('up', cardMap);
+                        break;
+
+                    case 39: // right
+                        $('.cardset').find('.selected').cardMoveHorizont('next', cardMap);
+                        break;
+
+                    case 40: // down
+                        $('.cardset').find('.selected').cardMoveHorizont('down', cardMap);
+                        break;
+
+                    default:
+                        return; // exit this handler for other keys
+                    }
+                    e.preventDefault();
+                }
+            });
+        },
+        createView = function (cardMap, rootCont, callbackFnk) {
+            var card_key, card_row, card;
+            //append Cardcontainer and cards
+            $(rootCont).append('<div class="cardset"></div>');
+
+            for (card_key in cardMap) {
+                if (cardMap.hasOwnProperty(card_key)) {
+                    card_row = cardMap[card_key];
+                    for (card in card_row) {
+                        if (card_row.hasOwnProperty(card)) {
+                            jQuery('<div/>', {
+                                id: cardMap[card_key][card].id
+                            }).addClass('card').mouseControls(cardMap).appendTo($(rootCont).find('.cardset'));
+                        }
+                    }
+                }
+            }
+
+            //append keypress handler in callback
+            if (typeof callbackFnk === 'function') {
+                callbackFnk.call(this, cardMap);
+            }
+
+
+        },
+        methods = {
+            init : function (options) {
+                return this.each(function () {
+
+                    // Create a default settings variable
+                    var defaults = {
+                        colors: ['orange', 'pink', 'red', 'purple', 'blue', 'green', 'brown', 'yellow']
+                    };
+
+                    rootEle = $(this);
+
+                    settings = $.extend({}, defaults, options);
+                    createGameMap(settings, function (cardMap) {
+                        createView(cardMap, rootEle, keypressControls(cardMap, rootEle));
+                    });
+                    //methods.checkEgg.apply(this, [ this ]);
+                });
+            },
+            restart : function () {
+               //Restart the Game
+
+            }
+
+        };
+
+    $.fn.demogame = function (method) {
+        if (methods[method]) {
+            return methods[method].apply(this, Array.prototype.slice.call(arguments, 1));
+        } else if (typeof method === 'object' || !method) {
+            return methods.init.apply(this, arguments);
+        } else {
+            $.error('Method ' +  method + ' does not exist on jQuery.demogame');
+        }
+    };
+
+}(jQuery));
+
+$(function () {
+    "use strict";
+
+//Call the game
+    $(window).ready(function () {
+        $('#container').demogame();
+    });
+});
 </script>
-x
 </body>
 </html>
-
